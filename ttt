@@ -1,0 +1,304 @@
+
+<script>
+  class RightNav {
+    constructor() {
+      this.oUl = document.getElementsByClassName('mui-scrollspy-iscroll')[0].getElementsByTagName('ul')[0];
+      this.oTitle = [...document.querySelectorAll('div[elevatorid]')].filter((v,i)=>{
+          return v && !!v.getAttribute('elevatorid');
+        });
+      this.click = true;
+      this.eleHeight = 42;
+      this.create();
+    }
+    create(){
+      this.theme();
+      this.config();
+    }
+    init(){
+      const that = this;
+      this.titleList = this.getTitleList();
+      let html = '';
+      this.titleList.map((v,i)=>{
+        html = html + `
+          <li data-index="${v.index}" class="${v.index === 0 ? 'active' : ''}" data-elevatorid="${v.id}"  data-title="${v.title.substring(0,this.config.textLimit)}"><div><i></i><span>${v.title.substring(0,this.config.textLimit)}</span></div></li>
+        `;
+      });
+      this.oUl.innerHTML = html;
+      this.selectItem();
+      this.UlTop = this.config.hasHideNav ? this.oUl.offsetTop - this.eleHeight : this.oUl.offsetTop;//ul距离顶部的距离
+      this.onscroll();
+    }
+    getTitleList(){
+      const titleList = [...document.querySelectorAll('div[elevatorid]')]
+      .filter((v,i)=>{
+        return v && !!v.getAttribute('elevatorid');
+      }).map((v,i)=>{
+        return {
+          title : v.getAttribute('elevator'),
+          index :i,
+          id : v.getAttribute('elevatorid') 
+        }
+      });
+      return titleList;
+    }
+
+    selectItem(){
+      const that = this;
+      this.oLi =  [...that.oUl.getElementsByTagName('li')];
+      const windowwid = Math.round(window.innerWidth/4); //屏幕1/4宽度
+      const allHeight = document.body.scrollHeight || document.documentElement.clientHeight || document.body.clientHeight;//文档高度
+      const screenHeight = window.screen.availHeight || window.innerHeight // 屏幕高度
+      const screenWidth = window.screen.availWidth || window.innerWidth // 屏幕宽度
+      for(let i = 0;i< that.oLi.length; i++){
+        that.oLi[i].onclick = function(e){
+          that.click = false;
+          const targetScroll = that.getAbsPos(that.oTitle[i]).y; // 元素局顶部的距离
+          
+          that.slideActive(that.getByClass(document.body, "active")[0], "active", that.oLi, i);
+          if(targetScroll <= allHeight - screenHeight){
+            that.slideTo(this, targetScroll - that.eleHeight);
+          }else{
+              that.slideTo(this, allHeight - screenHeight );
+          }
+          that.click = true;
+          if(that.hasClass(this, "active")) {
+            return false;
+          }
+        }
+      }
+    }
+
+    onscroll(){
+      const that = this;
+      const windowwid = Math.round(window.innerWidth/4); //屏幕1/4宽度
+      let ulWidth = 0;
+      for(let s = 0 ; s < that.oLi.length ; s++ ){
+        ulWidth += (that.oLi[s].offsetWidth);
+      }
+      
+      
+      window.onscroll=function(){
+        if(that.click){
+          const currentTop = document.documentElement.scrollTop || document.body.scrollTop;
+          currentTop >= that.UlTop ? that.outFixed() : that.inFixed() ;
+          const oActive = that.getByClass(document.body, "active")[0];
+          if(that.oTitle.length==0 || currentTop<= that.getAbsPos(that.oTitle[0]).y-that.eleHeight){
+            that.slideActive(oActive, "active", that.oLi, 0);
+          }
+          if(currentTop>=that.getAbsPos(that.oTitle[that.oTitle.length-1]).y-that.eleHeight){
+            that.slideActive(oActive, "active", that.oLi, that.oLi.length-1);
+
+            let x = that.getAbsPos(that.oLi[that.oLi.length-1]).x;
+              if(x <= windowwid){
+                that.scrollleft( that.oUl , 0 );
+              }else if(x >= ulWidth - windowwid * 3){
+                that.scrollleft( that.oUl , ulWidth - windowwid * 3 );
+              }else{
+                that.scrollleft( that.oUl , x  - windowwid);
+              }
+
+          }
+
+          for( let k=0;k<that.oTitle.length-1;k++){
+            if(currentTop>=that.getAbsPos(that.oTitle[k]).y-that.eleHeight && currentTop<that.getAbsPos(that.oTitle[k+1]).y-that.eleHeight){
+              that.slideActive(oActive, "active", that.oLi, k);
+              
+              let x = that.getAbsPos(that.oLi[k]).x;
+              if(x <= windowwid){
+                that.scrollleft( that.oUl , 0 );
+              }else if(x >= ulWidth - windowwid * 3){
+                that.scrollleft( that.oUl , ulWidth - windowwid * 3 );
+              }else{
+                that.scrollleft( that.oUl , x  - windowwid);
+              }
+            }
+          }
+          
+        }
+      };
+    }
+
+
+    inFixed(){
+      const that = this;
+      that.oUl.parentNode.style.position = "relative";
+      // !!that.config.hasHideNav ? '导航栏高度为0，overflow:hidden' : ''; // 隐藏导航栏
+      if(!!that.config.hasHideNav){ // 隐藏导航栏
+        document.getElementById('J_7jjj').style.height = 0;
+        document.getElementById('J_7jjj').style.overflow = 'hidden';
+      }
+
+    }
+    outFixed(){
+      const that = this;
+      that.oUl.parentNode.style.position = 'fixed';
+      // !!that.config.hasHideNav ? '导航栏高度为恢复正常，overflow:auto' : '';
+      if(!!that.config.hasHideNav){ // 显示导航栏
+        document.getElementById('J_7jjj').style.height = 'auto';
+        document.getElementById('J_7jjj').style.overflow = 'auto';
+      }
+    }
+
+    theme(){
+      `.mui-scrollspy-iscroll{
+        
+      }
+      .mui-scrollspy-iscroll ul{
+          width:100%;
+          height: 100%;
+          background:#000;
+          display:flex;
+          flex-direction:row;
+          flex-wrap:nowrap;
+          align-items:center;
+          overflow-x:scroll;
+          overflow-y: hidden;
+        -webkit-overflow-scrolling:touch;
+        }
+      .mui-scrollspy-iscroll  li{
+        flex-shrink: 0;
+        height: 100%;
+      
+      }
+      .mui-scrollspy-iscroll  li.active{
+        background:#089;
+        color:#fff;
+      }
+    
+      .mui-scrollspy-iscroll  li i{
+        display:none;
+        width:16px;
+        height: 16px;
+        background:url(http://pic.51yuansu.com/pic3/cover/00/62/56/5897e8e0df671_610.jpg) no-repeat center;
+        background-size:16px 16px;
+      }
+      .mui-scrollspy-iscroll  li span{
+        display:inline-block;
+      }
+
+      .mui-scrollspy-iscroll  li.active i{
+          display:inline-block;
+      }`
+    }
+
+    config(){
+      this.config = {
+        hasHideNav : true,// 是否要隐藏 导航栏
+        animation: false,// 是否开启动画
+        textLimit : 2// 标题限制个数
+      }
+    }
+
+    test(){
+      // const ele = document.createElement('style');
+      // // 前面再加一个class名或id名
+      // ele.innerHTML = `
+      //    #.mui-scrollspy-iscroll ul{
+      //     background:#000;
+      //     height: 60px;
+      //   }
+      //    .mui-scrollspy-iscroll  li{
+      //   }
+      // `;
+      // document.body.appendChild(ele);
+    }
+
+    hasClass(obj, sCls){
+      return obj.className.match(new RegExp("\\b"+sCls+"\\b", "i"));	
+      //match是string对象的一个方法，返回字符串对象
+    }
+ 
+    addClass(obj, sCls){
+      var blank=(obj.className!="")?" ":"";
+      if(!this.hasClass(obj, sCls))obj.className+=blank+sCls;
+    }
+ 
+    removeClass(obj, sCls){
+      var re=new RegExp("(\\s|^)"+sCls+"(\\s|$)", "i");		// \s表示空白字符
+      if(this.hasClass(obj, sCls))obj.className=obj.className.replace(re, "");
+    }
+ 
+    getAbsPos (obj){		//此方法不计算margin和border值，如果设置会报错
+      var x = obj.offsetLeft;  
+      var y = obj.offsetTop;  
+      while(obj = obj.offsetParent){
+        x += obj.offsetLeft;
+        y += obj.offsetTop;
+      }  
+      return {"x": x, "y": y};  
+    }
+ 
+    getByClass(obj, sCls){
+      const aEle = this.oLi;
+      const aResult=[];
+      const reg=new RegExp("\\b"+sCls+"\\b", "i");
+      for(let i=0;i<aEle.length;i++){
+		    if(reg.test(aEle[i].className)){
+          aResult.push(aEle[i]);
+        };
+	    }
+	    return aResult;
+    }
+ 
+    slideTo(obj, iTarget){
+      window.scrollTo(0,iTarget);
+  
+      // clearInterval(obj.timer);
+      // obj.timer=setInterval(function(){
+      // 	var currentPos=document.documentElement.scrollTop || document.body.scrollTop, iSpeed=0;
+        
+      // 	iSpeed=(iTarget-currentPos)/19;
+      // 	iSpeed=iSpeed>0 ? Math.ceil(iSpeed) : Math.floor(iSpeed);
+        
+      // 	if(iTarget!=currentPos){
+          
+      // 		window.scrollTo(0,currentPos+iSpeed);
+      //     that.lasttime = new Date();
+      // 	}
+      // 	else{
+      // 		clearInterval(obj.timer);
+      // 	}
+      // },0);
+    }
+ 
+    slideActive(obj, objCls, aTarget, num){
+      if(obj){
+        this.removeClass(obj, objCls);
+      }
+	    this.addClass(aTarget[num], objCls);    
+    }
+    scrollleft(obj,iTarget){
+
+      clearInterval(obj.timer);
+      obj.time = 0;
+
+      obj.timer=setInterval(function(){
+        var currentPos = obj.scrollLeft, iSpeed=0 ;
+        iSpeed=(iTarget-currentPos)/10;
+        iSpeed=iSpeed>0 ? Math.ceil(iSpeed) : Math.floor(iSpeed);
+
+        if(iTarget != currentPos){
+          obj.scrollLeft =  obj.scrollLeft + iSpeed;
+                    
+          if( currentPos ==  obj.scrollLeft){
+            clearInterval(obj.timer);
+          }
+
+        }
+        else{
+          clearInterval(obj.timer);
+        }
+      },1);
+    }
+
+
+}
+
+  window.onload = function () {
+    setTimeout('window.scrollTo(0, 0)',10);
+    const rightNav = new RightNav();
+    rightNav.init();
+    rightNav.test()
+  }
+
+</script>
